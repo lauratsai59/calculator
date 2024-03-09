@@ -16,6 +16,7 @@ const divide = (x, y) => {
 };
 
 
+
 function operate(operand1, operator, operand2) {
     let result;
     switch (operator) {
@@ -38,16 +39,7 @@ function operate(operand1, operator, operand2) {
 }
 
 function display(nbrToShow) {
-    document.querySelector('#display').textContent = nbrToShow;
-}
-
-// get stack top element without removing the element from stack
-function getStackTopElement() {
-    return stack.length < 1 || stack === undefined ? null: stack[stack.length - 1];
-}
-
-function isStackEmpty() {
-    return stack.length > 0? true: false;
+    document.querySelector('.display').textContent = nbrToShow;
 }
 
 function isOperator(element) {
@@ -55,62 +47,73 @@ function isOperator(element) {
     return operatorGroup.includes(element);
 }
 
-let displayVar = 0;
-let operand1 = 0;
-let operand2 = 0;
-let operand = "";
-let elemet = "";
-let result = 0;
-let stack = [];
-let operatorGroup = ['AC', '+-', '%', '/', '*', '-', '+', '='];
-const btns = document.querySelectorAll('.button');
+let operand1;
+let operand2;
+let operator;
+let result;
+let prevAction;
+let displayScreen;
+
+
+const acBtn = document.querySelector('#AC');
+acBtn.addEventListener('click', (e) => {
+    document.querySelector('.display').textContent = "0";
+    prevAction = undefined;
+    operand1 = undefined;
+    operand2 = undefined;
+});
+
+const btns = document.querySelectorAll('.button:not(#AC)');
 btns.forEach((btn) => {   
-    addEventListener('click', (e) => {
-        element = e.target.textContent;
-        if (isStackEmpty()) {
-            if (!isOperator(element)) {
-                displayVar = element;
-                stack.push(Number(element));
-                display(displayVar);
-            } 
-        } else {
-            let topElement = getStackTopElement();
-            // if the last element is an operand
-            if (!isOperator(topElement)) {
-                // if the current element is an operand
-                if (!isOperator(element)) {
-                    displayVar += element;
-                    stack.push(Number(displayVar));
-                    display(displayVar);
-                } else { // if the current element is an operator
-                    if (stack.length() === 1) {
-                        if (element !== "=") {
-                            stack.push(element);
-                        }
-                    } else {
-                        operand2 = stack.pop();
-                        operator = stack.pop();
-                        operand1 = stack.pop();
-                        result = operate(operand1, operator, operand2);
-                        stack.push(result);
-                        displayVar = result.toString();
-                    }
-                }
-            } else { // if the last element is an operator
-                // if the current element is an operand
-                if (!isOperator(element)) {
-                    displayVar = element;
-                    stack.push(Number(displayVar));
-                    display(displayVar);
-                } else { // if the current element is an operator
-                    // remove the last operator
-                    stack.pop();
-                    if (element !== "=") {
-                        stack.push(element);
-                    }
+    btn.addEventListener('click', (e) => {
+        btnText = e.target.textContent;
+        displayScreen = document.querySelector('.display').textContent.trim();
+        if (!isOperator(btnText)) {
+            if (btnText !== "." && (displayScreen == '0' || prevAction === 'operator')) {
+                document.querySelector('.display').textContent = btnText;
+            } else if (displayScreen.length <= 11)   {
+                if (btnText !== '.' || displayScreen.includes('.') === false) {
+                    document.querySelector('.display').textContent = displayScreen.slice(0, 9) + btnText;
                 }
             }
-        }                                                     
+            if (operand1 === undefined || prevAction === 'operand1') {
+                operand1 = Number(document.querySelector('.display').textContent); 
+                prevAction =  'operand1';  
+            } else {
+                operand2 = Number(document.querySelector('.display').textContent);
+                prevAction =  'operand2';  
+            }
+        } else if (btnText === "+-" && displayScreen.trim() !== "0" ) {
+            if (operand2 === undefined) {
+                operand1 = -operand1;
+                document.querySelector('.display').textContent = operand1.toString().slice(0, 10);
+            } else {
+                operand2 = -operand2;
+                document.querySelector('.display').textContent = operand2.toString().slice(0, 10);
+            }
+        } else if (btnText === "%" && document.querySelector('.display').textContent !== "0" ) {
+            if (operand2 === undefined) {
+                result = operate(operand1, "/", 100);
+                operand1 = result;
+                document.querySelector('.display').textContent = result.toString().slice(0, 10);
+            } else {
+                result = operate(operand2, "/", 100);
+                operand2 = result;
+                document.querySelector('.display').textContent = result.toString().slice(0, 10);
+            }
+        } else if (operand2 == undefined || (operator === "=")) {
+            operator = btnText;
+            prevAction =  'operator'; 
+        } else {
+            result = operate(operand1, operator, operand2);
+            document.querySelector('.display').textContent = (result === undefined)? "ERROR":result.toString().slice(0, 10);
+            operand1 = result;
+            operator = btnText;
+            operand2 = undefined;
+            prevAction =  'operator';  
+        }
+         
+        console.log(`${operand1}, ${operand2}, ${operator}`);                                                                                                
     })
 })
 
